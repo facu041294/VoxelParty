@@ -31,15 +31,20 @@ Este documento registra mi contribución y conjunto de modificaciones al proyect
   * **Optimización Adicional**: Al eliminar un objeto, el observador de la acción `'delete'` en `syncFromRemote` limpia automáticamente los temporizadores activos y remueve las claves del objeto de los tres mapas de throttling (`throttleTimers`, `throttleLastArgs`, `throttleLastRuns`), previniendo fugas de memoria en la caché de red (JS Heap Leak).
 * **Beneficio**: Evita la inundación y saturación del canal WebRTC en conexiones peer-to-peer y mantiene estable el consumo de memoria RAM.
 
+### 4. Corrección de Servidor de Señalización Caído (P2P)
+* **Archivo modificado**: [src/sync.js](file:///g:/Github repositories/VoxelParty/src/sync.js)
+* **Descripción**: Se removió el servidor público caído `wss://signaling.yjs.dev` (que arrojaba un error 404 constante de WebSocket en la consola) y se centralizó el uso en el servidor de señalización propio.
+* **Beneficio**: Eliminación de registros de errores en la consola de herramientas de desarrollo y estabilidad de señalización.
+
 ---
 
 ## 💾 Estado del Commit en la Rama Local
 
 Los cambios fueron comprometidos localmente en la rama `Facu_Branch`:
-* **Mensaje**: `perf: implement dynamic room routing and transform throttling`
+* **Mensaje**: `perf: implement dynamic room routing and transform throttling` (enmendado para incluir las correcciones de señalización).
 * **Archivos incluidos**:
   * `src/objects.js`
   * `src/sync.js`
   * `src/ui.js`
 
-El archivo `facundo-villarreal/README.md` ha sido actualizado para reflejar la integración post-merge con la estructura activa del proyecto.
+El archivo `facundo-villarreal/README.md` ha sido actualizado para reflejar la integración post-merge con la estructura activa del proyecto e indicar las correcciones del servidor de señalización.
