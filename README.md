@@ -14,6 +14,8 @@ Proyecto del desafio en vivo — **Max Sarlija Academy**.
 | UI | Vanilla JS + CSS Grid (Kalil) |
 | Sync/Visibility | CSS + JS awareness (Manuel/Igor) |
 | Import/Export | Python asset pipeline (Mauricio) |
+| 3D Gizmos & Controls | TransformControls & BoxHelper (Facundo) |
+| Performance & Red | WebRTC throttling & VRAM cleanup (Facundo) |
 | Build | [Vite](https://vitejs.dev) |
 | Deploy | GitHub Pages |
 
@@ -51,14 +53,15 @@ vite.config.js
 package.json
 ```
 
-## Como funciona
+## Cómo funciona
 
-1. Cada usuario se une a la sala Yjs `max-academy-3d-room` via WebRTC
-2. Los objetos viven en un `Y.Map` compartido — CRDT, sin conflictos
-3. El awareness de Yjs muestra quien esta conectado
-4. Clicks en el toolbar crean objetos que se sincronizan a todos los peers
-5. Seleccion via raycaster, propiedades editables en panel derecho
-6. Todo P2P, sin servidor propio
+1. Cada usuario se une a una sala Yjs única vía WebRTC (generada dinámicamente mediante el parámetro `?room=` en la URL para evitar colisiones).
+2. Los objetos viven en un `Y.Map` compartido — CRDT, sin conflictos de fusión.
+3. El awareness de Yjs muestra quién está conectado en vivo.
+4. Clicks en el toolbar o atajos de teclado crean objetos 3D sincronizados.
+5. Selección en 3D vía Raycaster (con resaltado visual BoxHelper) y manipulación directa interactiva usando Gizmos (TransformControls).
+6. Tráfico de red optimizado con throttling a 15 Hz para el arrastre y sincronización de propiedades en la barra de propiedades lateral.
+7. Todo P2P, sin servidor propio (con fallback al servidor público en caso de caída).
 
 ## Asset Exchange (Python)
 
@@ -90,6 +93,7 @@ npx gh-pages -d dist
 | Multiplayer Sync | Igor (@Igor-Streiff) |
 | MP Visibility/CSS | Manuel (@manucastellani) |
 | Asset Exchange | Mauricio (@ElkronAiken) |
+| 3D Gizmos & Performance | Facundo Villarreal (@facu041294) |
 | Base/Integration | Max Sarlija |
 
 ## Scripts
