@@ -50,16 +50,31 @@ Este documento registra mi contribución y conjunto de modificaciones al proyect
   * Los botones del menú inferior (Move, Rotate, Scale) y sus teclas rápidas (W, E, R) cambian dinámicamente el modo de operación del gizmo.
 * **Beneficio**: Interacción y modelado 3D natural, fluido y altamente optimizado en red.
 
+### 7. Niebla Atmosférica (Aesthetic Upgrade)
+* **Archivo modificado**: [src/scene.js](file:///g:/Github repositories/VoxelParty/src/scene.js)
+* **Descripción**: Se integró `THREE.FogExp2` en el lienzo 3D utilizando el mismo color oscuro de fondo (`#090b10`).
+* **Beneficio**: Efecto de profundidad que difumina suavemente los límites de la rejilla en la distancia.
+
+### 8. Ajuste Magnético de Rejilla (Grid Snapping)
+* **Archivo modificado**: [index.html](file:///g:/Github repositories/VoxelParty/index.html) y [src/ui.js](file:///g:/Github repositories/VoxelParty/src/ui.js)
+* **Descripción**: Se añadió una casilla de verificación "Snap to grid" en el panel lateral. Al activarse, ajusta los controles de traslación/escala a 0.5 unidades y las rotaciones a 15°.
+* **Beneficio**: Permite alinear y apilar cubos con precisión de forma muy ágil.
+
+### 9. Exportador de Escenas 3D (GLTFExporter)
+* **Archivo modificado**: [index.html](file:///g:/Github repositories/VoxelParty/index.html) y [src/ui.js](file:///g:/Github repositories/VoxelParty/src/ui.js)
+* **Descripción**: Se agregó un botón "Export 3D" en la barra superior. Permite recopilar las mallas del lienzo y descargarlas en formato estándar `.gltf` directamente del navegador.
+* **Beneficio**: Facilita exportar el modelado a Blender, Unity o Unreal Engine.
+
 ---
 
 ## 💾 Estado del Commit en la Rama Local
 
 Los cambios fueron comprometidos localmente en la rama `Facu_Branch`:
-* **Mensaje**: `feat: implement 3D selection BoxHelper and TransformControls gizmo` (enmendado para incluir las optimizaciones y documentación).
+* **Mensaje**: `feat: add atmospheric fog, grid snapping, and GLTF 3D exporter` (enmendado para incluir las optimizaciones y documentación).
 * **Archivos incluidos**:
-  * `src/objects.js`
-  * `src/sync.js`
-  * `src/ui.js`
+  * `index.html`
   * `src/scene.js`
+  * `src/ui.js`
+  * `facundo-villarreal/README.md`
 
-El archivo `facundo-villarreal/README.md` ha sido actualizado para reflejar la integración de los controles y visualizadores 3D.
+El archivo `facundo-villarreal/README.md` ha sido actualizado para reflejar la integración de las mejoras avanzadas de usabilidad y exportación 3D.

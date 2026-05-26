@@ -6,6 +6,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js'
 // --- Scene ---
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x090b10)
+scene.fog = new THREE.FogExp2(0x090b10, 0.015)
 
 // --- Camera ---
 const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000)
