@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
+import { TransformControls } from 'three/addons/controls/TransformControls.js'
+
 // --- Scene ---
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x090b10)
@@ -18,6 +20,22 @@ renderer.setPixelRatio(window.devicePixelRatio)
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
 controls.dampingFactor = 0.05
+
+// --- Transform Controls (3D Gizmo) ---
+const transformControls = new TransformControls(camera, renderer.domElement)
+transformControls.size = 0.8
+scene.add(transformControls)
+
+// Disable OrbitControls while dragging the gizmo to avoid camera conflict
+transformControls.addEventListener('dragging-changed', (event) => {
+  controls.enabled = !event.value
+})
+
+// --- Selection Helper (3D Box Outline) ---
+const selectionHelper = new THREE.BoxHelper()
+selectionHelper.visible = false
+selectionHelper.material.color.set(0x00d4ff) // Cyan color for selection
+scene.add(selectionHelper)
 
 // --- Lights ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
@@ -51,4 +69,4 @@ function resize() {
 
 window.addEventListener('resize', resize)
 
-export { scene, camera, renderer, controls, mountRenderer, resize }
+export { scene, camera, renderer, controls, transformControls, selectionHelper, mountRenderer, resize }

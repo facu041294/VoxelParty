@@ -36,15 +36,30 @@ Este documento registra mi contribución y conjunto de modificaciones al proyect
 * **Descripción**: Se removió el servidor público caído `wss://signaling.yjs.dev` (que arrojaba un error 404 constante de WebSocket en la consola) y se centralizó el uso en el servidor de señalización propio.
 * **Beneficio**: Eliminación de registros de errores en la consola de herramientas de desarrollo y estabilidad de señalización.
 
+### 5. Resaltado de Selección (BoxHelper)
+* **Archivo modificado**: [src/scene.js](file:///g:/Github repositories/VoxelParty/src/scene.js) y [src/ui.js](file:///g:/Github repositories/VoxelParty/src/ui.js)
+* **Descripción**: Se implementó `THREE.BoxHelper` en el lienzo 3D. Al seleccionar un objeto por raycasting o desde la jerarquía lateral, aparece un contorno luminoso de color cian sobre la malla seleccionada en tiempo real.
+* **Beneficio**: Retroalimentación visual inmediata en el espacio 3D para el usuario.
+
+### 6. Controles de Transformación 3D (TransformControls)
+* **Archivo modificado**: [src/scene.js](file:///g:/Github repositories/VoxelParty/src/scene.js) y [src/ui.js](file:///g:/Github repositories/VoxelParty/src/ui.js)
+* **Descripción**: Se importó e integró `TransformControls` (Gizmo 3D) en la escena. Permite arrastrar, rotar y escalar los objetos usando el ratón directamente en el lienzo.
+* **Funcionamiento**:
+  * Desactiva temporalmente `OrbitControls` al arrastrar para evitar conflictos de cámara.
+  * Sincroniza las coordenadas en tiempo real de forma regulada (a 15 Hz) con Yjs durante el arrastre, y fuerza una actualización definitiva (`isFinal = true`) al soltar el ratón.
+  * Los botones del menú inferior (Move, Rotate, Scale) y sus teclas rápidas (W, E, R) cambian dinámicamente el modo de operación del gizmo.
+* **Beneficio**: Interacción y modelado 3D natural, fluido y altamente optimizado en red.
+
 ---
 
 ## 💾 Estado del Commit en la Rama Local
 
 Los cambios fueron comprometidos localmente en la rama `Facu_Branch`:
-* **Mensaje**: `perf: implement dynamic room routing and transform throttling` (enmendado para incluir las correcciones de señalización).
+* **Mensaje**: `feat: implement 3D selection BoxHelper and TransformControls gizmo` (enmendado para incluir las optimizaciones y documentación).
 * **Archivos incluidos**:
   * `src/objects.js`
   * `src/sync.js`
   * `src/ui.js`
+  * `src/scene.js`
 
-El archivo `facundo-villarreal/README.md` ha sido actualizado para reflejar la integración post-merge con la estructura activa del proyecto e indicar las correcciones del servidor de señalización.
+El archivo `facundo-villarreal/README.md` ha sido actualizado para reflejar la integración de los controles y visualizadores 3D.

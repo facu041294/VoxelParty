@@ -1,7 +1,7 @@
 import { icon, TOOLS } from './icons.js'
 import { addObject, removeObject, updateObjectTransform, getAllObjects, getMesh, meshRegistry } from './objects.js'
 import { awareness, onStatusChange, setLocalUser, onAwarenessChange } from './sync.js'
-import { camera, controls } from './scene.js'
+import { camera, controls, transformControls, selectionHelper } from './scene.js'
 
 // --- State ---
 let activeTool = 'select'
@@ -73,6 +73,7 @@ function handleToolClick(tool) {
     activeTool = tool
     renderToolbar()
     showToast(`${tool.charAt(0).toUpperCase() + tool.slice(1)} tool active`)
+    updateSelectionHelpers()
   } else if (tool === 'add-cube') {
     const pos = { x: (Math.random() - 0.5) * 6, y: 0.5, z: (Math.random() - 0.5) * 6 }
     addObject('cube', pos)
@@ -151,6 +152,10 @@ export function renderPropsPanel() {
   const objects = getAllObjects()
   const obj = objects.find(o => o.id === selectedObjectId)
 
+  if (selectionHelper && selectionHelper.visible) {
+    selectionHelper.update()
+  }
+
   if (!obj) {
     container.innerHTML = `<div class="panel-section" style="color:var(--text-muted);font-size:var(--text-sm);text-align:center;padding:32px 16px;">No object selected</div>`
     document.getElementById('props-obj-badge').textContent = ''
@@ -228,6 +233,40 @@ export function selectObject(id) {
   renderScenePanel()
   renderPropsPanel()
   renderSelectionBar()
+  updateSelectionHelpers()
+}
+
+export function updateSelectionHelpers() {
+  if (!selectionHelper || !transformControls) return
+
+  if (selectedObjectId) {
+    const mesh = getMesh(selectedObjectId)
+    if (mesh) {
+      // 1. Actualizar BoxHelper
+      selectionHelper.setFromObject(mesh)
+      selectionHelper.visible = true
+
+      // 2. Actualizar TransformControls (Gizmo)
+      if (activeTool === 'move') {
+        transformControls.setMode('translate')
+        transformControls.attach(mesh)
+      } else if (activeTool === 'rotate') {
+        transformControls.setMode('rotate')
+        transformControls.attach(mesh)
+      } else if (activeTool === 'scale') {
+        transformControls.setMode('scale')
+        transformControls.attach(mesh)
+      } else {
+        // En modo 'select', quitar gizmo pero mantener BoxHelper
+        transformControls.detach()
+      }
+      return
+    }
+  }
+
+  // Si no hay selección, limpiar todo
+  selectionHelper.visible = false
+  transformControls.detach()
 }
 
 function renderSelectionBar() {
@@ -323,6 +362,67 @@ export function initUI() {
   renderActivityFeed()
   setupKeyboard()
   setupTopbar()
+
+  // --- TransformControls Event Listeners (3D Drag & Drop Sync) ---
+  if (transformControls) {
+    transformControls.addEventListener('change', () => {
+      if (!transformControls.dragging) return
+      if (selectedObjectId) {
+        const mesh = getMesh(selectedObjectId)
+        if (mesh) {
+          // Mantener BoxHelper en la posición del mesh
+          selectionHelper.update()
+
+          // Sincronizar de forma regulada (throttle a 15Hz)
+          const update = {
+            position: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
+            rotation: { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z },
+            scale: { x: mesh.scale.x, y: mesh.scale.y, z: mesh.scale.z }
+          }
+          updateObjectTransform(selectedObjectId, update)
+          showSyncIndicator()
+
+          // Actualizar inputs del panel de propiedades y barra de selección en tiempo real sin redesbujar
+          const inputs = document.getElementById('props-content')
+          if (inputs) {
+            const fmt = n => Number(n).toFixed(2)
+            const pxInput = inputs.querySelector('input[data-axis="px"]')
+            const pyInput = inputs.querySelector('input[data-axis="py"]')
+            const pzInput = inputs.querySelector('input[data-axis="pz"]')
+            const sxInput = inputs.querySelector('input[data-axis="sx"]')
+            const syInput = inputs.querySelector('input[data-axis="sy"]')
+            const szInput = inputs.querySelector('input[data-axis="sz"]')
+
+            if (pxInput) pxInput.value = fmt(mesh.position.x)
+            if (pyInput) pyInput.value = fmt(mesh.position.y)
+            if (pzInput) pzInput.value = fmt(mesh.position.z)
+            if (sxInput) sxInput.value = fmt(mesh.scale.x)
+            if (syInput) syInput.value = fmt(mesh.scale.y)
+            if (szInput) szInput.value = fmt(mesh.scale.z)
+          }
+          renderSelectionBar()
+        }
+      }
+    })
+
+    transformControls.addEventListener('mouseUp', () => {
+      if (selectedObjectId) {
+        const mesh = getMesh(selectedObjectId)
+        if (mesh) {
+          const update = {
+            position: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
+            rotation: { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z },
+            scale: { x: mesh.scale.x, y: mesh.scale.y, z: mesh.scale.z }
+          }
+          // Forzar envío definitivo al soltar
+          updateObjectTransform(selectedObjectId, update, true)
+          showSyncIndicator()
+          renderPropsPanel()
+          renderSelectionBar()
+        }
+      }
+    })
+  }
 }
 
 export { selectedObjectId, addActivity, showSyncIndicator }
