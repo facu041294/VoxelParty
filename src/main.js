@@ -1,21 +1,65 @@
-import { scene, camera, renderer, controls } from './scene.js'
-import { ydoc, yObjects, awareness } from './sync.js'
+// --- Styles ---
+import './styles/tokens.css'
+import './styles/base.css'
+import './styles/layout.css'
+import './styles/topbar.css'
+import './styles/toolbar.css'
+import './styles/viewport.css'
+import './styles/panels.css'
+
+// --- Modules ---
+import { scene, camera, renderer, controls, mountRenderer, resize } from './scene.js'
+import { onStatusChange, setLocalUser, onAwarenessChange } from './sync.js'
 import { syncFromRemote } from './objects.js'
-import { createPanel } from './ui.js'
+import {
+  initUI,
+  renderScenePanel,
+  renderPropsPanel,
+  renderUsersPanel,
+  updateConnectionStatus,
+  selectObject,
+  showToast,
+} from './ui.js'
+import { raycasterSetup } from './interaction.js'
 
-// --- Inicialización ---
-console.log('[VoxelParty] Scene initialized')
-console.log('[VoxelParty] Connected to room: max-academy-3d-room')
+// --- Boot ---
+mountRenderer()
+resize()
 
-// TODO Dev2: Llamar syncFromRemote() para escuchar cambios de Yjs
-// syncFromRemote()
+// Generate local user identity
+const USER_COLORS = ['#00d4ff', '#8b5cf6', '#e879f9', '#84cc16', '#f97316']
+const myColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)]
+const myName = 'User_' + Math.random().toString(36).slice(2, 6)
+const myInitials = myName.slice(0, 2).toUpperCase()
 
-// TODO UIUX: Llamar createPanel() para montar la UI
-// createPanel()
+setLocalUser({ name: myName, color: myColor, initials: myInitials })
 
-// TODO Dev1: Añadir raycaster para selección de objetos con click
+// --- Connection status ---
+onStatusChange((status) => {
+  updateConnectionStatus(status)
+  if (status === 'connected') {
+    showToast('Connected to room', 'success')
+  }
+})
 
-// --- Render Loop ---
+// --- Awareness (peers online) ---
+onAwarenessChange((users) => {
+  renderUsersPanel(users)
+})
+
+// --- Sync 3D objects from Yjs ---
+syncFromRemote(() => {
+  renderScenePanel()
+  renderPropsPanel()
+})
+
+// --- UI init ---
+initUI()
+
+// --- Raycaster for object picking ---
+raycasterSetup(selectObject)
+
+// --- Render loop ---
 function animate() {
   requestAnimationFrame(animate)
   controls.update()
@@ -23,3 +67,5 @@ function animate() {
 }
 
 animate()
+
+console.log('[VoxelParty] Ready — room: max-academy-3d-room')

@@ -1,32 +1,25 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
-// --- Escena ---
+// --- Scene ---
 const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x1a1a2e)
+scene.background = new THREE.Color(0x090b10)
 
-// --- Cámara ---
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-)
+// --- Camera ---
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000)
 camera.position.set(8, 6, 8)
 camera.lookAt(0, 0, 0)
 
 // --- Renderer ---
 const renderer = new THREE.WebGLRenderer({ antialias: true })
-renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
-document.getElementById('app').appendChild(renderer.domElement)
 
-// --- Controles ---
+// --- Controls ---
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
 controls.dampingFactor = 0.05
 
-// --- Luces ---
+// --- Lights ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
 scene.add(ambientLight)
 
@@ -35,14 +28,27 @@ directionalLight.position.set(5, 10, 7)
 scene.add(directionalLight)
 
 // --- Grid ---
-const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x333333)
+const gridHelper = new THREE.GridHelper(20, 20, 0x1a1e29, 0x12151d)
 scene.add(gridHelper)
 
-// --- Responsive ---
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-})
+// --- Mount into viewport ---
+function mountRenderer() {
+  const container = document.getElementById('viewport-canvas')
+  if (!container) return
+  container.appendChild(renderer.domElement)
+  resize()
+}
 
-export { scene, camera, renderer, controls }
+function resize() {
+  const container = document.getElementById('viewport-canvas')
+  if (!container) return
+  const w = container.clientWidth
+  const h = container.clientHeight
+  camera.aspect = w / h
+  camera.updateProjectionMatrix()
+  renderer.setSize(w, h)
+}
+
+window.addEventListener('resize', resize)
+
+export { scene, camera, renderer, controls, mountRenderer, resize }

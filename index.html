@@ -3,16 +3,144 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VoxelParty - 3D Collaborative Modeling</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
-    #app { width: 100%; height: 100%; }
-    canvas { display: block; }
-  </style>
+  <title>VoxelParty — Collaborative 3D Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+
+<div id="app">
+
+  <!-- ═══════════════════════ TOP BAR ═══════════════════════ -->
+  <header id="topbar">
+    <a class="topbar-logo" href="#">
+      <div class="logo-mark">V</div>
+      <span class="logo-text">Voxel<span>Party</span></span>
+    </a>
+
+    <div class="topbar-sep"></div>
+
+    <div class="room-info">
+      <span class="room-path">Room /</span>
+      <span class="room-name" id="room-name">max-academy-3d-room</span>
+    </div>
+
+    <div class="topbar-sep"></div>
+
+    <div class="conn-status" id="conn-status">
+      <div class="conn-status-dot"></div>
+      <span id="conn-label">Connecting…</span>
+    </div>
+
+    <div class="topbar-sep"></div>
+
+    <!-- Connected users stack -->
+    <div class="user-stack" id="user-stack"></div>
+    <span class="user-count-label" id="user-count">0 online</span>
+
+    <div class="topbar-right">
+      <button class="topbar-btn primary" id="btn-share">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="4" cy="8" r="2"/>
+          <path d="M10 4.8L6 7.2M6 8.8l4 2.4"/>
+        </svg>
+        Share room
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════ TOOLBAR ═══════════════════════ -->
+  <nav id="toolbar"></nav>
+
+  <!-- ═══════════════════════ SCENE PANEL ═══════════════════ -->
+  <aside id="panel-scene">
+    <div class="panel-header">
+      <span class="label-xs">Scene</span>
+      <button class="icon-btn" id="btn-add-from-panel" title="Add object">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      </button>
+    </div>
+    <div class="panel-body" id="scene-list"></div>
+
+    <div style="border-top:1px solid var(--border-subtle);flex-shrink:0">
+      <div class="panel-header" style="min-height:32px">
+        <span class="label-xs">Collaborators</span>
+        <span class="users-header-stat" id="users-header-stat"></span>
+      </div>
+      <div id="users-list" style="max-height:130px;overflow-y:auto"></div>
+    </div>
+
+    <div style="border-top:1px solid var(--border-subtle);flex-shrink:0">
+      <div class="panel-header" style="min-height:32px">
+        <span class="label-xs">Activity</span>
+      </div>
+      <div id="activity-feed" class="activity-feed" style="max-height:120px;overflow-y:auto"></div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════ VIEWPORT ══════════════════════ -->
+  <main id="viewport">
+    <div id="viewport-canvas"></div>
+
+    <div id="vp-cam-info">
+      CAM  <span>Perspective</span><br>
+      FOV  <span>60°</span>
+    </div>
+
+    <div id="axis-gizmo">
+      <svg viewBox="0 0 48 48" fill="none">
+        <line x1="24" y1="24" x2="24" y2="8" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/>
+        <polygon points="24,4 21,10 27,10" fill="#60a5fa"/>
+        <text x="24" y="2" text-anchor="middle" font-size="6" fill="#60a5fa" font-family="JetBrains Mono">Z</text>
+        <line x1="24" y1="24" x2="40" y2="32" stroke="#f87171" stroke-width="2" stroke-linecap="round"/>
+        <polygon points="44,34 38,28 36,35" fill="#f87171"/>
+        <text x="46" y="37" text-anchor="middle" font-size="6" fill="#f87171" font-family="JetBrains Mono">X</text>
+        <line x1="24" y1="24" x2="8" y2="32" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+        <polygon points="4,34 10,28 12,35" fill="#4ade80"/>
+        <text x="2" y="37" text-anchor="middle" font-size="6" fill="#4ade80" font-family="JetBrains Mono">Y</text>
+        <circle cx="24" cy="24" r="3" fill="var(--bg-elevated)" stroke="var(--border-strong)" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <!-- Selection info bar -->
+    <div id="vp-selection-bar"></div>
+
+    <!-- Viewport controls hint -->
+    <div id="vp-controls">
+      <div class="vp-control-group" style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);padding:4px 8px;gap:6px">
+        <span title="Orbit">MMB</span>
+        <span style="color:var(--border-strong)">·</span>
+        <span title="Pan">Shift+MMB</span>
+        <span style="color:var(--border-strong)">·</span>
+        <span title="Zoom">Scroll</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════ PROPERTIES PANEL ══════════════ -->
+  <aside id="panel-props">
+    <div class="panel-header">
+      <span class="label-xs">Properties</span>
+      <span id="props-obj-badge" style="font-size:var(--text-xs);color:var(--text-muted);font-family:var(--font-mono)"></span>
+    </div>
+    <div class="panel-body" id="props-content">
+      <div class="panel-section" style="color:var(--text-muted);font-size:var(--text-sm);text-align:center;padding:32px 16px;">
+        No object selected
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Sync status indicator -->
+<div id="sync-status">
+  <div class="sync-spinner"></div>
+  Syncing changes…
+</div>
+
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>

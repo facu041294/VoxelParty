@@ -1,43 +1,157 @@
+import * as THREE from 'three'
+import { scene } from './scene.js'
+import { yObjects } from './sync.js'
+
+// Local registry: id -> THREE.Mesh
+const meshRegistry = new Map()
+
+// User colors for random assignment
+const COLORS = ['#00d4ff', '#8b5cf6', '#e879f9', '#84cc16', '#f97316', '#f87171', '#fbbf24']
+
+function randomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)]
+}
+
 /**
- * objects.js - Gestión de objetos 3D sincronizados
- *
- * Este módulo maneja la creación, actualización y eliminación
- * de objetos 3D en la escena, sincronizados via Yjs.
+ * Create a Three.js mesh from serialized object data
  */
+function createMeshFromData(data) {
+  let geometry
+  switch (data.type) {
+    case 'sphere':
+      geometry = new THREE.SphereGeometry(0.5, 32, 32)
+      break
+    case 'cylinder':
+      geometry = new THREE.CylinderGeometry(0.4, 0.4, 1, 32)
+      break
+    case 'cube':
+    default:
+      geometry = new THREE.BoxGeometry(1, 1, 1)
+  }
 
-// TODO Dev1: Implementar addObject(type, position)
-//   - Crear mesh (box, sphere, cylinder) según type
-//   - Asignar ID único (crypto.randomUUID)
-//   - Añadir a la escena y al Y.Map 'objects'
-//   - Serializar: { type, position: {x,y,z}, rotation: {x,y,z}, scale: {x,y,z}, color }
-export function addObject(type, position) {
-  // TODO Dev1
+  const material = new THREE.MeshStandardMaterial({ color: data.color || '#2a3a5c' })
+  const mesh = new THREE.Mesh(geometry, material)
+
+  mesh.position.set(data.position.x, data.position.y, data.position.z)
+  mesh.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z)
+  mesh.scale.set(data.scale.x, data.scale.y, data.scale.z)
+  mesh.userData.objectId = data.id
+  mesh.userData.objectType = data.type
+  mesh.userData.objectName = data.name
+
+  return mesh
 }
 
-// TODO Dev1: Implementar removeObject(id)
-//   - Eliminar mesh de la escena
-//   - Eliminar entrada del Y.Map 'objects'
+/**
+ * Add a new object to scene and sync via Yjs
+ */
+export function addObject(type = 'cube', position = { x: 0, y: 0.5, z: 0 }) {
+  const id = crypto.randomUUID()
+  const color = randomColor()
+  const name = `${type.charAt(0).toUpperCase() + type.slice(1)}_${id.slice(0, 4)}`
+
+  const data = {
+    id,
+    type,
+    name,
+    color,
+    position,
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+  }
+
+  // Write to Yjs (propagates to all peers)
+  yObjects.set(id, data)
+  return id
+}
+
+/**
+ * Remove an object from scene and Yjs
+ */
 export function removeObject(id) {
-  // TODO Dev1
+  yObjects.delete(id)
 }
 
-// TODO Dev2: Implementar updateObjectTransform(id, transform)
-//   - Actualizar posición/rotación/escala en el Y.Map
-//   - El observer de Yjs propagará el cambio a otros peers
+/**
+ * Update an object's transform in Yjs
+ */
 export function updateObjectTransform(id, transform) {
-  // TODO Dev2
+  const existing = yObjects.get(id)
+  if (!existing) return
+  const updated = { ...existing, ...transform }
+  yObjects.set(id, updated)
 }
 
-// TODO Dev2: Implementar syncFromRemote()
-//   - Observar cambios en yObjects (observe/observeDeep)
-//   - Crear/actualizar/eliminar meshes locales según el estado remoto
-export function syncFromRemote() {
-  // TODO Dev2
+/**
+ * Get all synced objects as array
+ */
+export function getAllObjects() {
+  const objects = []
+  yObjects.forEach((val, key) => {
+    objects.push(val)
+  })
+  return objects
 }
 
-// TODO Dev2: Implementar selectObject(mesh)
-//   - Adjuntar TransformControls al mesh seleccionado
-//   - Mostrar outline/highlight
-export function selectObject(mesh) {
-  // TODO Dev2
+/**
+ * Get mesh by object ID
+ */
+export function getMesh(id) {
+  return meshRegistry.get(id) || null
 }
+
+/**
+ * Sync local scene from Yjs state — observe changes and create/update/delete meshes
+ */
+export function syncFromRemote(onChangeCallback) {
+  // Initial sync
+  yObjects.forEach((data, id) => {
+    if (!meshRegistry.has(id)) {
+      const mesh = createMeshFromData(data)
+      scene.add(mesh)
+      meshRegistry.set(id, mesh)
+    }
+  })
+
+  // Observe ongoing changes
+  yObjects.observe((event) => {
+    event.changes.keys.forEach((change, key) => {
+      if (change.action === 'add' || change.action === 'update') {
+        const data = yObjects.get(key)
+        if (!data) return
+
+        let mesh = meshRegistry.get(key)
+        if (mesh && change.action === 'update') {
+          // Update existing mesh transform
+          mesh.position.set(data.position.x, data.position.y, data.position.z)
+          mesh.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z)
+          mesh.scale.set(data.scale.x, data.scale.y, data.scale.z)
+          if (data.color) mesh.material.color.set(data.color)
+        } else {
+          // Remove old mesh if exists (type changed)
+          if (mesh) {
+            scene.remove(mesh)
+            mesh.geometry.dispose()
+            mesh.material.dispose()
+          }
+          // Create new mesh
+          mesh = createMeshFromData(data)
+          scene.add(mesh)
+          meshRegistry.set(key, mesh)
+        }
+      } else if (change.action === 'delete') {
+        const mesh = meshRegistry.get(key)
+        if (mesh) {
+          scene.remove(mesh)
+          mesh.geometry.dispose()
+          mesh.material.dispose()
+          meshRegistry.delete(key)
+        }
+      }
+    })
+
+    if (onChangeCallback) onChangeCallback()
+  })
+}
+
+export { meshRegistry }
