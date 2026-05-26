@@ -16,9 +16,15 @@ if (!roomName) {
   window.history.replaceState({}, '', newUrl.toString())
 }
 
-// --- WebRTC Provider (serverless P2P sync) ---
+// --- WebRTC Provider (P2P sync via signaling) ---
+// Se incluye el servidor propio de Render y el público de yjs.dev como fallback de seguridad
+const SIGNALING_SERVERS = [
+  'wss://voxelparty-signaling.onrender.com',
+  'wss://signaling.yjs.dev'
+]
+
 const provider = new WebrtcProvider(roomName, ydoc, {
-  signaling: ['wss://signaling.yjs.dev'],
+  signaling: SIGNALING_SERVERS,
 })
 
 // --- Shared data structures ---
