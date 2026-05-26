@@ -54,6 +54,8 @@ Preparar y entregar el PR de la parte de sincronizacion multiplayer P2P para `Vo
 - Se agregaron transformaciones basicas de posicion, rotacion y escala.
 - Se agrego borrado de objeto seleccionado.
 - Se agrego lista simple de usuarios conectados via awareness.
+- Se agrego una tarjeta visible `Sync status` para diagnosticar peers, objetos y servidores de signaling.
+- Se agrego el script `npm run signal` para levantar un signaling local de desarrollo cuando los servidores publicos no conectan.
 - Se documento handoff tecnico en `igor_folder/handoff_sync_multiplayer.md`.
 - Se actualizo checklist en `igor_folder/plan_checklist_sync_multiplayer.md`.
 - Se agrego `.gitignore` para evitar versionar `node_modules/` y `dist/`.
@@ -64,12 +66,19 @@ Preparar y entregar el PR de la parte de sincronizacion multiplayer P2P para `Vo
 - `npm run build`: correcto.
 - `npm run dev -- --host 127.0.0.1`: arranco correctamente.
 - `Invoke-WebRequest http://127.0.0.1:5173/`: respondio HTTP `200`.
+- `npm run signal`: arranco signaling local en `127.0.0.1:4444`.
+- Prueba manual con dos pestanas:
+  - aparicion remota de cubos: correcta,
+  - transformaciones remotas: correctas,
+  - reconexion despues de refresh: correcta,
+  - actualizacion de lista de usuarios conectados: correcta.
 - Diagnosticos/lints del IDE: sin errores reportados.
 
 ## PR / Conflict Notes
 
 - El PR se preparo desde la branch `feature/sync-multiplayer-p2p`.
-- El commit creado fue `012b2d5 Add P2P sync multiplayer prototype`.
+- El primer commit creado fue `012b2d5 Add P2P sync multiplayer prototype`.
+- Despues de la prueba manual fallida inicial, se agrego `a53a4f1 Improve local sync diagnostics`.
 - Al intentar abrir el PR en GitHub, GitHub reporto 9 conflictos.
 - El usuario entro a la vista de GitHub y presiono `Resolve`.
 - En el estado local revisado despues, la branch esta limpia y trackea `origin/feature/sync-multiplayer-p2p`.
@@ -78,18 +87,14 @@ Preparar y entregar el PR de la parte de sincronizacion multiplayer P2P para `Vo
 
 ## Risks
 
-- Falta prueba manual real con dos pestanas o dos navegadores para confirmar:
-  - aparicion remota de cubos,
-  - transformaciones remotas,
-  - reconexion despues de refresh,
-  - actualizacion de lista de usuarios conectados.
+- En la prueba local, los servidores publicos de signaling no conectaron (`0/2` inicialmente). Para validar el flujo se uso signaling local en `ws://127.0.0.1:4444`.
 - El bundle de produccion supera 500 kB por dependencias como Three.js/Yjs; Vite lo reporta como warning, no como error.
 - Si GitHub mantiene conflictos, conviene resolverlos comparando contra `main` actualizado antes del merge final.
 
 ## Next Steps
 
 1. Completar la resolucion de conflictos en GitHub si la UI todavia los muestra.
-2. Correr prueba manual con dos pestanas en `http://127.0.0.1:5173/`.
+2. Para repetir la prueba local, correr `npm run signal` y `npm run dev -- --host 127.0.0.1`.
 3. Revisar que el PR mantenga la logica de red dentro de `src/sync.js`.
 4. Pedir review de Max o Merge Master.
 5. Si el PR queda verde y sin conflictos, mergear a `main` segun el flujo del equipo.
