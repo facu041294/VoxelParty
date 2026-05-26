@@ -4,9 +4,14 @@ import { WebrtcProvider } from 'y-webrtc'
 // --- Yjs Document ---
 const ydoc = new Y.Doc()
 
-// --- WebRTC Provider (serverless P2P sync) ---
+// --- WebRTC Provider (P2P sync via signaling) ---
+// Deploy your own: see /signaling folder + render.yaml
+const SIGNALING_SERVERS = [
+  'wss://voxelparty-signaling.onrender.com',
+]
+
 const provider = new WebrtcProvider('max-academy-3d-room', ydoc, {
-  signaling: ['wss://signaling.yjs.dev'],
+  signaling: SIGNALING_SERVERS,
 })
 
 // --- Shared data structures ---
