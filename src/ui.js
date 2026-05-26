@@ -1,7 +1,9 @@
+import * as THREE from 'three'
 import { icon, TOOLS } from './icons.js'
 import { addObject, removeObject, updateObjectTransform, getAllObjects, getMesh, meshRegistry } from './objects.js'
 import { awareness, onStatusChange, setLocalUser, onAwarenessChange } from './sync.js'
-import { camera, controls, transformControls, selectionHelper } from './scene.js'
+import { camera, controls, transformControls, selectionHelper, scene } from './scene.js'
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js'
 
 // --- State ---
 let activeTool = 'select'
@@ -188,6 +190,11 @@ export function renderPropsPanel() {
         <input type="color" value="${obj.color}" id="prop-color" style="width:32px;height:32px;padding:0;border:1px solid var(--border-strong);border-radius:var(--radius-sm);cursor:pointer">
         <span style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-muted)">${obj.color}</span>
       </div>
+      <div class="prop-label" style="margin-top:16px">Snapping</div>
+      <div style="display:flex;align-items:center;gap:8px;padding-top:4px">
+        <input type="checkbox" id="snap-grid" ${transformControls && transformControls.translationSnap !== null ? 'checked' : ''} style="cursor:pointer;width:14px;height:14px">
+        <span style="font-size:var(--text-xs);color:var(--text-normal)">Snap to grid (0.5 units)</span>
+      </div>
     </div>`
 
   // Bind property inputs
@@ -223,6 +230,19 @@ export function renderPropsPanel() {
     colorInput.addEventListener('change', () => {
       updateObjectTransform(selectedObjectId, { color: colorInput.value }, true)
       showSyncIndicator()
+    })
+  }
+
+  const snapCheckbox = container.querySelector('#snap-grid')
+  if (snapCheckbox) {
+    snapCheckbox.addEventListener('change', () => {
+      const enabled = snapCheckbox.checked
+      if (transformControls) {
+        transformControls.translationSnap = enabled ? 0.5 : null
+        transformControls.rotationSnap = enabled ? Math.PI / 12 : null
+        transformControls.scaleSnap = enabled ? 0.5 : null
+      }
+      showToast(`Grid snapping ${enabled ? 'enabled' : 'disabled'}`)
     })
   }
 }
@@ -344,6 +364,10 @@ export function setupTopbar() {
     showToast('Room link copied!', 'success')
   })
 
+  document.getElementById('btn-export')?.addEventListener('click', () => {
+    exportToGLTF()
+  })
+
   document.getElementById('btn-add-from-panel')?.addEventListener('click', () => {
     handleToolClick('add-cube')
   })
@@ -423,6 +447,53 @@ export function initUI() {
       }
     })
   }
+}
+
+export function exportToGLTF() {
+  if (!scene) return
+  showToast('Exporting 3D scene...', 'info')
+
+  const exporter = new GLTFExporter()
+
+  // Crear un grupo temporal para recopilar solo las mallas sincronizadas
+  const tempGroup = new THREE.Group()
+  scene.add(tempGroup)
+
+  // Clonar los meshes de meshRegistry al grupo temporal
+  meshRegistry.forEach((mesh) => {
+    const clone = mesh.clone()
+    // Conservar color original en el clon del material
+    if (mesh.material && clone.material) {
+      clone.material = mesh.material.clone()
+    }
+    tempGroup.add(clone)
+  })
+
+  const room = new URLSearchParams(window.location.search).get('room') || 'default'
+
+  exporter.parse(
+    tempGroup,
+    (gltf) => {
+      // Limpiar grupo temporal de la escena
+      scene.remove(tempGroup)
+
+      const output = JSON.stringify(gltf, null, 2)
+      const blob = new Blob([output], { type: 'application/json' })
+
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `voxelparty_scene_${room}.gltf`
+      link.click()
+
+      showToast('Scene exported successfully!', 'success')
+    },
+    (error) => {
+      scene.remove(tempGroup)
+      console.error('Error exporting GLTF:', error)
+      showToast('Export failed!', 'danger')
+    },
+    { binary: false }
+  )
 }
 
 export { selectedObjectId, addActivity, showSyncIndicator }
