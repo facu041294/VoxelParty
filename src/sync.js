@@ -4,13 +4,26 @@ import { WebrtcProvider } from 'y-webrtc'
 // --- Yjs Document ---
 const ydoc = new Y.Doc()
 
+// --- Dynamic Room Enrutamiento ---
+let roomName = new URLSearchParams(window.location.search).get('room')
+if (!roomName) {
+  const randomId = typeof crypto.randomUUID === 'function' 
+    ? crypto.randomUUID().slice(0, 8) 
+    : Math.random().toString(36).substring(2, 10)
+  roomName = `voxel-room-${randomId}`
+  const newUrl = new URL(window.location.href)
+  newUrl.searchParams.set('room', roomName)
+  window.history.replaceState({}, '', newUrl.toString())
+}
+
 // --- WebRTC Provider (P2P sync via signaling) ---
-// Deploy your own: see /signaling folder + render.yaml
+// Se incluye el servidor propio de Render y el público de yjs.dev como fallback de seguridad
 const SIGNALING_SERVERS = [
   'wss://voxelparty-signaling.onrender.com',
+  'wss://signaling.yjs.dev'
 ]
 
-const provider = new WebrtcProvider('max-academy-3d-room', ydoc, {
+const provider = new WebrtcProvider(roomName, ydoc, {
   signaling: SIGNALING_SERVERS,
 })
 
