@@ -197,6 +197,14 @@ export function syncFromRemote(onChangeCallback) {
           mesh.material.dispose()
           meshRegistry.delete(key)
         }
+        // Limpiar registros del cache de throttling (Previene fuga de memoria JS Heap)
+        const timer = throttleTimers.get(key)
+        if (timer) {
+          clearTimeout(timer)
+          throttleTimers.delete(key)
+        }
+        throttleLastArgs.delete(key)
+        throttleLastRuns.delete(key)
       }
     })
 

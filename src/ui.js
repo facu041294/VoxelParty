@@ -308,6 +308,11 @@ export function setupTopbar() {
   document.getElementById('btn-add-from-panel')?.addEventListener('click', () => {
     handleToolClick('add-cube')
   })
+
+  // Collapsible props panel (Manuel)
+  document.getElementById('toggle-props')?.addEventListener('click', () => {
+    document.getElementById('panel-props')?.classList.toggle('collapsed')
+  })
 }
 
 // --- Initialize UI ---
