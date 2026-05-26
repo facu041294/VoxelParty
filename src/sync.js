@@ -4,8 +4,20 @@ import { WebrtcProvider } from 'y-webrtc'
 // --- Yjs Document ---
 const ydoc = new Y.Doc()
 
+// --- Dynamic Room Enrutamiento ---
+let roomName = new URLSearchParams(window.location.search).get('room')
+if (!roomName) {
+  const randomId = typeof crypto.randomUUID === 'function' 
+    ? crypto.randomUUID().slice(0, 8) 
+    : Math.random().toString(36).substring(2, 10)
+  roomName = `voxel-room-${randomId}`
+  const newUrl = new URL(window.location.href)
+  newUrl.searchParams.set('room', roomName)
+  window.history.replaceState({}, '', newUrl.toString())
+}
+
 // --- WebRTC Provider (serverless P2P sync) ---
-const provider = new WebrtcProvider('max-academy-3d-room', ydoc, {
+const provider = new WebrtcProvider(roomName, ydoc, {
   signaling: ['wss://signaling.yjs.dev'],
 })
 

@@ -75,11 +75,61 @@ export function removeObject(id) {
 /**
  * Update an object's transform in Yjs
  */
-export function updateObjectTransform(id, transform) {
-  const existing = yObjects.get(id)
-  if (!existing) return
-  const updated = { ...existing, ...transform }
-  yObjects.set(id, updated)
+// --- Variables para throttling de transformaciones ---
+const throttleTimers = new Map()
+const throttleLastArgs = new Map()
+const throttleLastRuns = new Map()
+
+/**
+ * Update an object's transform in Yjs (Throttled to 15 Hz / ~66ms to prevent network flooding)
+ * @param {string} id - Object ID
+ * @param {object} transform - Transform updates
+ * @param {boolean} isFinal - If true, force immediate update and bypass throttle
+ */
+export function updateObjectTransform(id, transform, isFinal = false) {
+  const now = Date.now()
+  const limit = 66 // ~15 FPS
+  const lastRun = throttleLastRuns.get(id) || 0
+
+  const performUpdate = () => {
+    const existing = yObjects.get(id)
+    if (existing) {
+      const accumulated = throttleLastArgs.get(id) || {}
+      const updated = { ...existing, ...accumulated, ...transform }
+      yObjects.set(id, updated)
+    }
+    throttleLastRuns.set(id, Date.now())
+    
+    // Limpiar timers
+    const timer = throttleTimers.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      throttleTimers.delete(id)
+    }
+    throttleLastArgs.delete(id)
+  }
+
+  if (isFinal) {
+    performUpdate()
+    return
+  }
+
+  if (now - lastRun >= limit) {
+    performUpdate()
+  } else {
+    const prevArgs = throttleLastArgs.get(id) || {}
+    throttleLastArgs.set(id, { ...prevArgs, ...transform })
+
+    if (!throttleTimers.has(id)) {
+      const timer = setTimeout(() => {
+        const lastTransform = throttleLastArgs.get(id)
+        if (lastTransform) {
+          performUpdate()
+        }
+      }, limit - (now - lastRun))
+      throttleTimers.set(id, timer)
+    }
+  }
 }
 
 /**

@@ -201,15 +201,22 @@ export function renderPropsPanel() {
       if (axis === 'sy') update.scale = { ...current.scale, y: val }
       if (axis === 'sz') update.scale = { ...current.scale, z: val }
 
-      updateObjectTransform(selectedObjectId, update)
+      // Se pasa true en isFinal porque es un cambio definitivo al confirmar el input
+      updateObjectTransform(selectedObjectId, update, true)
       showSyncIndicator()
     })
   })
 
   const colorInput = container.querySelector('#prop-color')
   if (colorInput) {
+    // Evento continuo al arrastrar por la paleta (con throttling)
     colorInput.addEventListener('input', () => {
       updateObjectTransform(selectedObjectId, { color: colorInput.value })
+      showSyncIndicator()
+    })
+    // Evento definitivo al soltar el selector de color (inmediato)
+    colorInput.addEventListener('change', () => {
+      updateObjectTransform(selectedObjectId, { color: colorInput.value }, true)
       showSyncIndicator()
     })
   }
